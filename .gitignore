@@ -1,0 +1,41 @@
+
+*.md
+
+!.gitignore
+
+# バックエンド（Rails）
+backend/.bundle/
+backend/vendor/
+backend/log/
+backend/tmp/
+backend/db/*.sqlite3
+backend/db/*.sqlite3-journal
+backend/public/uploads/
+backend/.env
+backend/.env.local
+backend/config/master.key
+backend/config/credentials.yml.enc
+
+# ローカルクライアント（Node.js）
+local-client/node_modules/
+local-client/dist/
+local-client/.env
+local-client/.env.local
+local-client/npm-debug.log
+local-client/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+
+# セッション・一時ファイル
+*.tmp
+*.bak

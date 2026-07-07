@@ -1,0 +1,30 @@
+{
+  "name": "teama",
+  "version": "1.0.0",
+  "description": "description",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "felica",
+    "nfc",
+    "pcsclite",
+    "rc-s300"
+  ],
+  "author": "ISDL Hackathon 2026 Team A",
+  "license": "MIT",
+  "dependencies": {
+    "@pokusew/pcsclite": "^1.2.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.48.0",
+    "jest": "^29.6.4",
+    "nodemon": "^3.0.1"
+  }
+}

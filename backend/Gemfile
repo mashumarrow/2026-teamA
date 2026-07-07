@@ -1,0 +1,49 @@
+source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+ruby "3.2.0"
+
+# Rails
+gem "rails", "~> 7.0.0"
+gem "pg", "~> 1.1"
+gem "puma", "~> 5.0"
+
+# 認証
+gem "auth0-ruby", "~> 3.0"
+gem "jwt", "~> 2.7"
+
+# API
+gem "active_model_serializers", "~> 0.10.0"
+gem "rack-cors"
+
+# バリデーション
+gem "validate_email", "~> 1.0"
+
+# リアルタイム通信
+gem "redis", "~> 5.0"
+gem "actioncable"
+
+# Spotify & Alexa 連携
+gem "httparty", "~> 0.21.0"  # HTTP クライアント
+gem "oauth2", "~> 2.0"        # OAuth 2.0
+
+# 環境変数管理
+gem "dotenv-rails"
+
+# Web パフォーマンス
+gem "bootsnap", ">= 1.4.4", require: false
+
+group :development, :test do
+  gem "byebug", platforms: [:mri, :mingw, :x64_mingw]
+end
+
+group :development do
+  gem "web-console", ">= 4.1.0"
+  gem "rubocop", require: false
+  gem "rubocop-rails", require: false
+end
+
+group :test do
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+end
