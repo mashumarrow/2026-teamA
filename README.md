@@ -37,15 +37,6 @@ notepad .env
 code .env
 ```
 
-設定内容：
-
-```env
-AUTH0_DOMAIN=your-auth0-domain.auth0.com
-AUTH0_CLIENT_ID=your-client-id
-AUTH0_CLIENT_SECRET=your-client-secret
-API_KEY=dev-api-key
-```
-
 ### 3. Docker で起動
 
 ```bash
