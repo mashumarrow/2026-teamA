@@ -1,6 +1,6 @@
 
 *.md
-
+.env
 !.gitignore
 
 # バックエンド（Rails）
