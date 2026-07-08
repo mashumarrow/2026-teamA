@@ -78,4 +78,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  bundle_cache:
+  #bundle_cache:
