@@ -2,6 +2,7 @@
 *.md
 .env
 !.gitignore
+node_modules
 
 # バックエンド（Rails）
 backend/.bundle/

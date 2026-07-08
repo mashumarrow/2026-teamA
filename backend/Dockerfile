@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
   postgresql-client \
   libpq-dev \
   git \
+  nodejs \
+  npm \
   && rm -rf /var/lib/apt/lists/*
 
 # Gemfile をコピーして依存パッケージをインストール

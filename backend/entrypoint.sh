@@ -11,6 +11,9 @@ echo 'PostgreSQL started'
 echo 'Checking and installing gems...'
 bundle install
 
+echo 'Checking and installing node packages...'
+npm install
+npm run build:css
 
 # マイグレーション実行
 bundle exec rails db:create --quiet 2>/dev/null || true
