@@ -79,6 +79,9 @@ docker-compose exec web bundle exec rails db:migrate
 
 ## ブランチ切る
 issueの画面でブランチを切るボタンを押す．
+'create branch'のボタンを押すとその指示に従ってブランチ切る
+<img width="403" height="135" alt="Image" src="https://github.com/user-attachments/assets/8d6c4434-f860-4244-897a-bbc264a82097" />
+
 
 ```bash
 git branch
