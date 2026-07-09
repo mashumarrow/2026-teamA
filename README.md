@@ -37,7 +37,8 @@ notepad .env
 code .env
 ```
 
-### 3. 右下の`CRLF`を`LF`に変更
+### 3.entrypoint.shファイルの右下の`CRLF`を`LF`に変更されているか確認
+
 <img width="137" height="56" alt="Image" src="https://github.com/user-attachments/assets/840b786c-af36-48aa-bff5-2f6ca670b513" />
 
 ### 4. Docker で起動
