@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
   postgresql-client \
   libpq-dev \
   git \
+  bash \
   nodejs \
   npm \
   && rm -rf /var/lib/apt/lists/*
@@ -26,5 +27,4 @@ RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
 
 # エントリーポイント
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]

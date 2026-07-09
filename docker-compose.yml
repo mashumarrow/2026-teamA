@@ -67,7 +67,6 @@ services:
       - ./backend:/app
       #- bundle_cache:/usr/local/bundle
     working_dir: /app
-    command: /app/entrypoint.sh
     networks:
       - room-network
 
