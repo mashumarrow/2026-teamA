@@ -2,8 +2,9 @@
 *.rbc
 .bundle
 .byebuild_dirs
-Gemfile.lock
 /vendor/bundle
+node_modules
+npm-debug.log
 /log/*
 /tmp/*
 !/log/.keep
