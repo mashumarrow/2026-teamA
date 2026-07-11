@@ -14,8 +14,12 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Gemfile をコピーして依存パッケージをインストール
-COPY Gemfile ./
+COPY Gemfile Gemfile.lock ./
 RUN gem install bundler:2.4.0 && bundle install --jobs 4 --retry 5
+
+# Node依存パッケージをインストール
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # アプリケーションコードをコピー
 COPY . .
