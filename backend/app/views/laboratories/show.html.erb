@@ -1,26 +1,40 @@
 <style>
   .portal-shell { position: relative; min-height: 100vh; overflow: hidden; background: #101418; color: #f8fafc; }
   #canvas-3d { position: fixed; inset: 0; z-index: 0; width: 100vw; height: 100vh; }
-  .portal-topbar, .portal-sidebar, .music-panel { position: fixed; z-index: 20; }
+  .portal-topbar, .portal-sidebar { position: fixed; z-index: 20; }
   .portal-topbar { top: 18px; left: 22px; right: 22px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; pointer-events: none; }
   .portal-topbar .topbar-actions { pointer-events: auto; }
   .portal-kicker { margin: 0; color: #7dd3fc; font-size: 12px; font-weight: 700; text-transform: uppercase; }
   .portal-topbar h1 { margin: 2px 0 0; font-size: clamp(22px, 3vw, 38px); letter-spacing: 0; }
   .portal-status { max-width: 320px; padding: 10px 14px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; background: rgba(16,20,24,.72); color: #d1fae5; font-size: 13px; text-align: right; backdrop-filter: blur(10px); }
   .portal-sidebar { left: 22px; bottom: 22px; display: grid; gap: 10px; width: min(280px, calc(100vw - 44px)); pointer-events: auto; }
-  .portal-action { display: grid; gap: 4px; min-height: 62px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: #f8fafc; background: rgba(15,23,42,.88); text-align: left; cursor: default; box-shadow: 0 12px 34px rgba(0,0,0,.35); }
-  .portal-action[data-open-music] { cursor: pointer; }
-  .portal-action[data-open-music]:hover { border-color: rgba(147,197,253,.62); background: rgba(15,23,42,.96); }
+  .portal-action { display: grid; gap: 4px; min-height: 62px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: #f8fafc; background: rgba(15,23,42,.88); text-align: left; cursor: pointer; box-shadow: 0 12px 34px rgba(0,0,0,.35); }
   .portal-action span { color: #93c5fd; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+  .portal-modal { width: min(960px, calc(100vw - 48px)); max-height: min(620px, calc(100vh - 48px)); padding: 28px; border: 1px solid rgba(148,163,184,.35); border-radius: 8px; color: #e5e7eb; background: rgba(20,26,32,.94); box-shadow: 0 24px 80px rgba(0,0,0,.42); backdrop-filter: blur(12px); }
+  .portal-modal::backdrop { background: rgba(0,0,0,.45); }
+  .modal-close { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; color: #f8fafc; background: rgba(148,163,184,.16); cursor: pointer; }
+  .music-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+  .portal-panel-title { margin: 0; font-size: 28px; line-height: 1.2; }
+  .inline-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+  .inline-form input { min-width: 0; padding: 14px 16px; border: 1px solid rgba(148,163,184,.35); border-radius: 8px; color: #f8fafc; background: #0f141a; }
+  .inline-form button, .track-button { border: 1px solid rgba(255,255,255,.18); color: #f8fafc; background: rgba(20,184,166,.86); cursor: pointer; }
+  .inline-form button { padding: 12px 20px; border-radius: 8px; }
+  .music-section-title { margin: 22px 0 10px; color: #bae6fd; font-size: 15px; font-weight: 700; }
+  .list-panel { display: grid; gap: 8px; }
   .track-row { display: grid; grid-template-columns: 52px 1fr auto auto; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,.04); }
-  .track-row + .track-row { margin-top: 8px; }
+  .track-row:hover { background: rgba(255,255,255,.07); }
   .track-row img { width: 44px; height: 44px; border-radius: 4px; object-fit: cover; background: #0f141a; }
   .track-row div { min-width: 0; }
   .track-row strong, .track-row span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track-row strong.is-added { color: #1ed760; }
   .track-row span, .muted { color: #94a3b8; font-size: 13px; }
-  .track-button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; color: #f8fafc; background: transparent; cursor: pointer; }
+  .track-kind { display: inline-block; width: 11px; height: 11px; margin-right: 4px; border: 1px solid currentColor; border-radius: 2px; vertical-align: -1px; }
+  .track-menu { color: #cbd5e1; font-weight: 700; letter-spacing: 3px; }
+  .track-button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border-radius: 999px; background: transparent; font-size: 18px; line-height: 1; }
   .track-button:hover { background: rgba(255,255,255,.1); }
   .track-button.is-added { color: #111827; background: #1ed760; border-color: #1ed760; }
+  .result-box { min-height: 120px; padding: 14px; overflow: auto; border-radius: 8px; color: #d1fae5; background: #0f141a; }
+  @media (max-width: 720px) { .portal-topbar { flex-direction: column; } .portal-modal { width: calc(100vw - 24px); padding: 22px; } .inline-form, .track-row { grid-template-columns: 1fr; } .track-row img { display: none; } .portal-status { text-align: left; } }
 </style>
 
 <div class="portal-shell">
@@ -32,34 +46,36 @@
       <h1>研究室 3D ポータル</h1>
     </div>
     <div class="topbar-actions flex items-center gap-3">
-      <div class="portal-status" id="room-status"><%= current_user.name %></div>
+      <div class="portal-status" id="room-status"><%= current_user&.name || "API 準備中" %></div>
       <%= button_to "Logout", logout_path, method: :delete, class: "btn btn-sm btn-outline" %>
     </div>
   </header>
 
-  <nav class="portal-sidebar" id="portal-sidebar" aria-label="機能メニュー">
-    <button class="portal-action" type="button" data-open-music>
+  <nav class="portal-sidebar" aria-label="機能メニュー">
+    <button class="portal-action btn btn-outline justify-start" type="button" data-panel="music-panel">
       <span>Music</span>
       楽曲検索・登録
     </button>
-    <button class="portal-action" type="button">
+    <button class="portal-action btn btn-outline justify-start" type="button" data-panel="card-panel">
       <span>Card</span>
       カード登録
     </button>
-    <button class="portal-action" type="button">
+    <button class="portal-action btn btn-outline justify-start" type="button" data-panel="dashboard-panel">
       <span>Stay</span>
       滞在ログ
     </button>
-    <button class="portal-action" type="button">
+    <button class="portal-action btn btn-outline justify-start" type="button" data-panel="queue-panel">
       <span>Queue</span>
       選曲実行
     </button>
   </nav>
 
-  <section class="music-panel" id="music-panel" aria-label="楽曲検索・登録">
+  <dialog class="portal-modal" id="music-panel">
+    <form method="dialog">
+      <button class="modal-close" aria-label="閉じる">x</button>
+    </form>
     <div class="music-panel-header">
-      <h2>楽曲検索・登録</h2>
-      <button class="btn btn-sm btn-outline" type="button" data-close-music>閉じる</button>
+      <h2 class="portal-panel-title">楽曲検索・登録</h2>
     </div>
     <% unless @spotify_env_ready %>
       <p class="muted">Spotify 検索を使うには .env に SPOTIFY_CLIENT_ID と SPOTIFY_CLIENT_SECRET を設定してください。</p>
@@ -71,14 +87,14 @@
     </div>
 
     <section>
-      <h3>検索結果</h3>
+      <h3 class="music-section-title">検索結果</h3>
       <div class="list-panel" id="music-search-results">
         <p class="muted">Spotify から曲を検索できます。</p>
       </div>
     </section>
 
     <section>
-      <h3>お気に入り</h3>
+      <h3 class="music-section-title">お気に入り</h3>
       <div class="list-panel" id="favorite-tracks">
         <% if @favorite_tracks.any? %>
           <% @favorite_tracks.each do |track| %>
@@ -92,8 +108,9 @@
                 <strong class="is-added"><%= track.track_name %></strong>
                 <span><span class="track-kind"></span>楽曲・<%= track.artist_name %></span>
               </div>
-              <span class="track-menu">...</span>
-              <button class="track-icon-button is-added" type="button" data-remove-track="<%= track.id %>" aria-label="お気に入りから削除">✓</button>
+              <%= tag.button "▶", class: "track-button", type: "button", data: { preview_url: track.preview_url }, aria: { label: "プレビュー再生" } if track.preview_url.present? %>
+              <%= tag.button "↗", class: "track-button", type: "button", data: { spotify_url: "https://open.spotify.com/track/#{track.spotify_track_id}" }, aria: { label: "Spotifyで開く" } if track.preview_url.blank? %>
+              <button class="track-button is-added" type="button" data-remove-track="<%= track.id %>" data-remove-spotify-track-id="<%= track.spotify_track_id %>" aria-label="お気に入りから削除">✓</button>
             </article>
           <% end %>
         <% else %>
@@ -101,44 +118,37 @@
         <% end %>
       </div>
     </section>
-    </div>
   </dialog>
 
   <audio id="spotify-preview-player"></audio>
 
-  <dialog class="portal-modal modal" id="card-panel">
-    <div class="modal-box portal-glass">
+  <dialog class="portal-modal" id="card-panel">
     <form method="dialog">
-      <button class="modal-close btn btn-sm btn-circle btn-ghost" aria-label="閉じる">x</button>
+      <button class="modal-close" aria-label="閉じる">x</button>
     </form>
     <h2 class="portal-panel-title">カード登録</h2>
     <div class="inline-form">
-      <input id="card-idm-input" class="input input-bordered" type="text" placeholder="0123456789ABCDEF" autocomplete="off">
-      <button id="card-register-button" class="btn btn-primary" type="button">登録</button>
+      <input id="card-idm-input" type="text" placeholder="0123456789ABCDEF" autocomplete="off">
+      <button id="card-register-button" type="button">登録</button>
     </div>
     <p class="muted">登録後、ローカル FeliCa クライアントの打刻 API で入退室が記録されます。</p>
-    </div>
   </dialog>
 
-  <dialog class="portal-modal modal" id="dashboard-panel">
-    <div class="modal-box portal-glass">
+  <dialog class="portal-modal" id="dashboard-panel">
     <form method="dialog">
-      <button class="modal-close btn btn-sm btn-circle btn-ghost" aria-label="閉じる">x</button>
+      <button class="modal-close" aria-label="閉じる">x</button>
     </form>
     <h2 class="portal-panel-title">滞在ログ</h2>
     <div class="list-panel" id="access-log-list"></div>
-    </div>
   </dialog>
 
-  <dialog class="portal-modal modal" id="queue-panel">
-    <div class="modal-box portal-glass">
+  <dialog class="portal-modal" id="queue-panel">
     <form method="dialog">
-      <button class="modal-close btn btn-sm btn-circle btn-ghost" aria-label="閉じる">x</button>
+      <button class="modal-close" aria-label="閉じる">x</button>
     </form>
     <h2 class="portal-panel-title">選曲実行</h2>
-    <button id="queue-play-button" type="button" class="wide-button btn btn-primary">ルーレットで曲を選ぶ</button>
+    <button id="queue-play-button" type="button" class="inline-form-button">ルーレットで曲を選ぶ</button>
     <pre id="queue-result" class="result-box"></pre>
-    </div>
   </dialog>
 </div>
 
@@ -149,6 +159,9 @@
 <script>
   const apiBase = "/api/v1";
   const previewPlayer = document.getElementById("spotify-preview-player");
+  const favoriteTrackIds = new Set(
+    Array.from(document.querySelectorAll("[data-favorite-track-id]")).map((element) => element.dataset.favoriteTrackId)
+  );
   let playingPreviewUrl = null;
   let activePreviewButton = null;
 
@@ -160,11 +173,32 @@
       if (button.dataset.panel === "dashboard-panel") loadAccessLogs();
     });
   });
+
   document.getElementById("music-search-button").addEventListener("click", searchTracks);
-  musicSearchInput.addEventListener("keydown", (event) => {
+  document.getElementById("music-search-input").addEventListener("keydown", (event) => {
     if (event.key === "Enter") searchTracks();
   });
   bindFavoriteRemoveButtons();
+  bindPreviewButtons();
+
+  document.getElementById("card-register-button").addEventListener("click", async () => {
+    const idm = document.getElementById("card-idm-input").value.trim();
+    if (!idm) return setStatus("IDm を入力してください");
+
+    const response = await fetch(`${apiBase}/cards`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idm }),
+    });
+    const data = await response.json();
+    setStatus(data.status === "success" ? "カードを登録しました" : data.message);
+  });
+
+  document.getElementById("queue-play-button").addEventListener("click", async () => {
+    const response = await fetch(`${apiBase}/alexa/play_queue`, { method: "POST" });
+    const data = await response.json();
+    document.getElementById("queue-result").textContent = JSON.stringify(data, null, 2);
+  });
 
   async function searchTracks() {
     const query = document.getElementById("music-search-input").value.trim();
@@ -185,11 +219,13 @@
       <article class="track-row">
         ${track.image_url ? `<img src="${escapeHtml(track.image_url)}" alt="">` : "<img alt=\"\">"}
         <div>
-          <strong>${escapeHtml(track.track_name)}</strong>
-          <span>楽曲・${escapeHtml(track.artist_name || "")}</span>
+          <strong class="${favoriteTrackIds.has(track.spotify_track_id) ? "is-added" : ""}">${escapeHtml(track.track_name)}</strong>
+          <span><span class="track-kind"></span>楽曲・${escapeHtml(track.artist_name || "")}</span>
         </div>
         ${previewButtonHtml(track)}
-        <button class="track-button" type="button" data-track="${encodeURIComponent(JSON.stringify(track))}" aria-label="お気に入りに追加">＋</button>
+        ${favoriteTrackIds.has(track.spotify_track_id)
+          ? `<button class="track-button is-added" type="button" disabled aria-label="登録済み">✓</button>`
+          : `<button class="track-button" type="button" data-track="${encodeURIComponent(JSON.stringify(track))}" aria-label="お気に入りに追加">＋</button>`}
       </article>
     `).join("") || `<p class="muted">該当する曲がありません。</p>`;
 
@@ -224,19 +260,23 @@
     }
 
     container.innerHTML = data.tracks.map((track) => `
-      <article class="track-row">
+      <article class="track-row" data-favorite-track-id="${track.spotify_track_id}">
         ${track.image_url ? `<img src="${escapeHtml(track.image_url)}" alt="">` : "<img alt=\"\">"}
         <div>
-          <strong>${escapeHtml(track.track_name)}</strong>
-          <span>楽曲・${escapeHtml(track.artist_name)}</span>
+          <strong class="is-added">${escapeHtml(track.track_name)}</strong>
+          <span><span class="track-kind"></span>楽曲・${escapeHtml(track.artist_name)}</span>
         </div>
         ${previewButtonHtml(track)}
-        <button class="track-button is-added" type="button" data-remove-track="${track.id}" aria-label="お気に入りから削除">✓</button>
+        <button class="track-button is-added" type="button" data-remove-track="${track.id}" data-remove-spotify-track-id="${track.spotify_track_id}" aria-label="お気に入りから削除">✓</button>
       </article>
     `).join("") || `<p class="muted">登録済みの曲はありません。</p>`;
 
     bindPreviewButtons(container);
-    container.querySelectorAll("[data-remove-track]").forEach((button) => {
+    bindFavoriteRemoveButtons(container);
+  }
+
+  function bindFavoriteRemoveButtons(scope = document) {
+    scope.querySelectorAll("[data-remove-track]").forEach((button) => {
       button.addEventListener("click", async () => {
         await fetch(`${apiBase}/spotify/tracks/${button.dataset.removeTrack}`, { method: "DELETE" });
         if (button.dataset.removeSpotifyTrackId) favoriteTrackIds.delete(button.dataset.removeSpotifyTrackId);
@@ -304,68 +344,6 @@
     setStatus("プレビュー再生が終了しました");
   });
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  function previewButtonHtml(track) {
-    const previewUrl = track.preview_url || "";
-    const spotifyUrl = track.external_urls?.spotify || `https://open.spotify.com/track/${track.spotify_track_id}`;
-    if (previewUrl) {
-      return `<button class="track-button" type="button" data-preview-url="${escapeHtml(previewUrl)}" aria-label="プレビュー再生">▶</button>`;
-    }
-
-    return `<button class="track-button" type="button" data-spotify-url="${escapeHtml(spotifyUrl)}" aria-label="Spotifyで開く">↗</button>`;
-  }
-
-  function bindPreviewButtons(scope = document) {
-    scope.querySelectorAll("[data-preview-url]").forEach((button) => {
-      button.addEventListener("click", () => togglePreview(button));
-    });
-
-    scope.querySelectorAll("[data-spotify-url]").forEach((button) => {
-      button.addEventListener("click", () => {
-        window.open(button.dataset.spotifyUrl, "_blank", "noopener");
-      });
-    });
-  }
-
-  function togglePreview(button) {
-    const previewUrl = button.dataset.previewUrl;
-
-    if (playingPreviewUrl === previewUrl && !previewPlayer.paused) {
-      previewPlayer.pause();
-      button.textContent = "▶";
-      activePreviewButton = null;
-      setStatus("再生を停止しました");
-      return;
-    }
-
-    document.querySelectorAll("[data-preview-url]").forEach((item) => {
-      item.textContent = "▶";
-    });
-    playingPreviewUrl = previewUrl;
-    activePreviewButton = button;
-    previewPlayer.src = previewUrl;
-    previewPlayer.play()
-      .then(() => {
-        button.textContent = "⏸";
-        setStatus("プレビュー再生中");
-      })
-      .catch(() => {
-        button.textContent = "▶";
-        activePreviewButton = null;
-        setStatus("ブラウザで再生できませんでした");
-      });
-  }
-
-  previewPlayer.addEventListener("ended", () => {
-    if (activePreviewButton) activePreviewButton.textContent = "▶";
-    activePreviewButton = null;
-    playingPreviewUrl = null;
-    setStatus("プレビュー再生が終了しました");
-  });
-
-<<<<<<< Updated upstream
   function refreshSearchResultButtons() {
     document.querySelectorAll("[data-track]").forEach((button) => {
       const track = JSON.parse(decodeURIComponent(button.dataset.track));
@@ -373,15 +351,10 @@
 
       const row = button.closest(".track-row");
       row.querySelector("strong").classList.add("is-added");
-      button.outerHTML = `<button class="track-icon-button is-added" type="button" disabled aria-label="登録済み">✓</button>`;
+      button.outerHTML = `<button class="track-button is-added" type="button" disabled aria-label="登録済み">✓</button>`;
     });
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+  }
+
   async function loadAccessLogs() {
     const response = await fetch(`${apiBase}/access_logs`);
     const data = await response.json();
@@ -394,7 +367,6 @@
         </div>
       </article>
     `).join("") || `<p class="muted">滞在ログはまだありません</p>`;
->>>>>>> Stashed changes
   }
 
   function setStatus(message) {
@@ -406,4 +378,6 @@
     div.textContent = value || "";
     return div.innerHTML;
   }
+
+  setStatus("API 接続待機中");
 </script>
