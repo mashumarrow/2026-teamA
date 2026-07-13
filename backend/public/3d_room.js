@@ -9,7 +9,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1, 
   1000, 
 ); 
-camera.position.set(0, 2.75, 0); 
+camera.position.set(0, 2.75, 1); 
 camera.lookAt(0, 1, 0); 
   
 // Renderer 
@@ -93,7 +93,7 @@ loader.load(
   (gltf) => {
     avatar = gltf.scene;
     avatar.scale.set(0.5, 0.5, 0.5);
-    avatar.position.set(-1.5, 0, 3);
+    avatar.position.set(-0.5, 0, -2);
     scene.add(avatar);
 
     const shadowMaterial = new THREE.MeshBasicMaterial({
@@ -197,7 +197,7 @@ walls.push(
 
 walls.push(
   new THREE.Box3(
-    new THREE.Vector3(2.1, 0, -4.5),
+    new THREE.Vector3(2.1, 0, -4.35),
     new THREE.Vector3(2.6, 2, -4.3)
   )
 );
@@ -225,7 +225,7 @@ walls.push(
 
 walls.push(
   new THREE.Box3(
-    new THREE.Vector3(2.9, 0, -1.9),
+    new THREE.Vector3(3, 0, -1.9),
     new THREE.Vector3(3.2, 2, -1.6)
   )
 );
@@ -261,7 +261,7 @@ walls.push(
 walls.push(
   new THREE.Box3(
     new THREE.Vector3(3.05, 0, 2),
-    new THREE.Vector3(3.15, 2, 4.7)
+    new THREE.Vector3(3.15, 2, 4.6)
   )
 );
 
@@ -428,7 +428,7 @@ walls.push(
 
 walls.push(
   new THREE.Box3(
-    new THREE.Vector3(1.4, 0, -2.1),
+    new THREE.Vector3(1.4, 0, -1.9),
     new THREE.Vector3(2, 2, -1.7)
   )
 );
@@ -470,7 +470,7 @@ walls.push(
 
 walls.push(
   new THREE.Box3(
-    new THREE.Vector3(-0.5, 0, 0.4),
+    new THREE.Vector3(-0.5, 0, 0.5),
     new THREE.Vector3(0.2, 2, 0.8)
   )
 );
@@ -506,21 +506,21 @@ walls.push(
 walls.push(
   new THREE.Box3(
     new THREE.Vector3(0.9, 0, 2.7),
-    new THREE.Vector3(2.1, 2, 3.1)
+    new THREE.Vector3(1.9, 2, 3.1)
   )
 );
 
 walls.push(
   new THREE.Box3(
     new THREE.Vector3(0.8, 0, 3.1),
-    new THREE.Vector3(2.5, 2, 3.5)
+    new THREE.Vector3(2.1, 2, 3.5)
   )
 );
 
 walls.push(
   new THREE.Box3(
     new THREE.Vector3(0.7, 0, 3.5),
-    new THREE.Vector3(2.7, 2, 3.9)
+    new THREE.Vector3(2.3, 2, 3.9)
   )
 );
 
@@ -573,6 +573,7 @@ walls.push(
   )
 );
 
+/*
 // Wall helpers
 function addWallHelpers(boxes) {
   boxes.forEach((wall) => {
@@ -580,8 +581,8 @@ function addWallHelpers(boxes) {
     scene.add(helper);
   });
 }
-
 addWallHelpers(walls);
+*/
 
 // Handle window resize 
 window.addEventListener("resize", () => {
@@ -618,6 +619,27 @@ canvas.addEventListener("wheel", (e) => {
 
 const keys = {};
 const speed = 0.03;
+const avatarCollisionHalfSize = new THREE.Vector3(0.25, 0.8, 0.25);
+
+function getAvatarCollisionBox(position) {
+  return new THREE.Box3(
+    new THREE.Vector3(
+      position.x - avatarCollisionHalfSize.x,
+      position.y,
+      position.z - avatarCollisionHalfSize.z,
+    ),
+    new THREE.Vector3(
+      position.x + avatarCollisionHalfSize.x,
+      position.y + avatarCollisionHalfSize.y,
+      position.z + avatarCollisionHalfSize.z,
+    ),
+  );
+}
+
+function isAvatarColliding(position) {
+  const collisionBox = getAvatarCollisionBox(position);
+  return walls.some((wall) => collisionBox.intersectsBox(wall));
+}
 
 window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
@@ -681,9 +703,41 @@ function animate() {
 
   if (moveDirection.lengthSq() > 0) {
     moveDirection.normalize();
-    avatar.position.x += moveDirection.x * speed;
-    avatar.position.z += moveDirection.z * speed;
-    avatar.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+
+    const deltaX = moveDirection.x * speed;
+    const deltaZ = moveDirection.z * speed;
+    const nextPosition = avatar.position.clone();
+    const actualMove = new THREE.Vector3();
+
+    if (Math.abs(deltaX) > 0) {
+      const xOnlyPosition = nextPosition.clone();
+      xOnlyPosition.x += deltaX;
+
+      if (!isAvatarColliding(xOnlyPosition)) {
+        nextPosition.x += deltaX;
+        actualMove.x = deltaX;
+      }
+    }
+
+    if (Math.abs(deltaZ) > 0) {
+      const zOnlyPosition = nextPosition.clone();
+      zOnlyPosition.z += deltaZ;
+
+      if (!isAvatarColliding(zOnlyPosition)) {
+        nextPosition.z += deltaZ;
+        actualMove.z = deltaZ;
+      }
+    }
+
+    if (actualMove.lengthSq() > 0) {
+      avatar.position.copy(nextPosition);
+      avatar.rotation.y = Math.atan2(actualMove.x, actualMove.z);
+      playAvatarAnimationByName("walk");
+    } else {
+      playAvatarAnimationByName("idle");
+    }
+  } else {
+    playAvatarAnimationByName("idle");
   }
 
   if (avatarShadow) {
