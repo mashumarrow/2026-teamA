@@ -52,7 +52,7 @@ class SpotifyPlayerService
       body: { uris: [track_uri] }.to_json
     )
 
-    return success if response.code == 204
+    return success if spotify_success?(response)
 
     Rails.logger.warn("[spotify-player] playback failed: #{response.code} #{response.body}")
     error(playback_error_message(response), "SPOTIFY_PLAYBACK_FAILED", response.code)
@@ -75,7 +75,7 @@ class SpotifyPlayerService
       query: query
     )
 
-    return success if response.code == 204
+    return success if spotify_success?(response) || already_paused?(response)
 
     Rails.logger.warn("[spotify-player] pause failed: #{response.code} #{response.body}")
     error(playback_error_message(response), "SPOTIFY_PAUSE_FAILED", response.code)
@@ -151,7 +151,7 @@ class SpotifyPlayerService
       body: { device_ids: [target_device_id], play: false }.to_json
     )
 
-    return success if response.code == 204
+    return success if spotify_success?(response)
 
     Rails.logger.warn("[spotify-player] transfer failed: #{response.code} #{response.body}")
     error(playback_error_message(response), "SPOTIFY_TRANSFER_FAILED", response.code)
@@ -168,6 +168,23 @@ class SpotifyPlayerService
     else
       "Spotify playback failed"
     end
+  end
+
+  def spotify_success?(response)
+    [200, 202, 204].include?(response.code)
+  end
+
+  def already_paused?(response)
+    return false unless response.code == 403
+
+    spotify_error(response)["reason"] == "NOT_PLAYING"
+  end
+
+  def spotify_error(response)
+    parsed = response.parsed_response
+    return {} unless parsed.is_a?(Hash)
+
+    parsed["error"].is_a?(Hash) ? parsed["error"] : {}
   end
 
   def success
