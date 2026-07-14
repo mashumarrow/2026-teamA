@@ -346,6 +346,7 @@
   );
   let playingSpotifyTrackId = null;
   let activePlaybackButton = null;
+  let spotifyPlaybackRequestInFlight = false;
 
   document.querySelector("[data-open-music]").addEventListener("click", () => {
     closeCardModal();
@@ -389,17 +390,17 @@
     queuePanel.classList.remove("is-open");
     setStatus("<%= j current_user.name %>");
   });
-  document.querySelector("[data-open-photo]").addEventListener("click", () => {
+  document.querySelector("[data-open-photo]")?.addEventListener("click", () => {
     musicPanel.classList.remove("is-open");
     closeCardModal();
     stayPanel.classList.remove("is-open");
     queuePanel.classList.remove("is-open");
     renderPhotoGallery();
-    photoModal.showModal();
+    if (photoModal?.showModal) photoModal.showModal();
   });
-  document.getElementById("photo-upload-button").addEventListener("click", uploadPhotos);
-  photoListToggle.addEventListener("click", () => {
-    photoListSection.classList.toggle("hidden");
+  document.getElementById("photo-upload-button")?.addEventListener("click", uploadPhotos);
+  photoListToggle?.addEventListener("click", () => {
+    photoListSection?.classList.toggle("hidden");
     renderPhotoGallery();
   });
   staySortButtons.forEach((button) => {
@@ -558,11 +559,15 @@
 
   function bindPreviewButtons(scope = document) {
     scope.querySelectorAll("[data-spotify-track-id]").forEach((button) => {
+      if (button.dataset.playbackBound === "true") return;
+      button.dataset.playbackBound = "true";
       button.addEventListener("click", () => toggleSpotifyPlayback(button));
     });
   }
 
   async function toggleSpotifyPlayback(button) {
+    if (spotifyPlaybackRequestInFlight) return;
+
     const spotifyTrackId = button.dataset.spotifyTrackId;
     if (!spotifyTrackId) return;
     const deviceId = spotifyDeviceSelect.value;
@@ -571,45 +576,64 @@
       return;
     }
 
+    spotifyPlaybackRequestInFlight = true;
+    button.disabled = true;
+
     if (playingSpotifyTrackId === spotifyTrackId) {
       setStatus("停止中");
-      const response = await fetch(`${apiBase}/spotify/pause`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id: deviceId }),
-      });
-      const data = await response.json().catch(() => ({}));
+      try {
+        const response = await fetch(`${apiBase}/spotify/pause`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ device_id: deviceId }),
+        });
+        const data = await response.json().catch(() => ({}));
 
-      if (data.status === "success") {
+        if (response.ok || data.status === "success") {
+          resetPlaybackButtons();
+          setStatus("再生を停止しました");
+        } else {
+          setStatus(data.message || "停止に失敗しました");
+        }
+      } catch {
         resetPlaybackButtons();
-        setStatus("再生を停止しました");
-      } else {
-        setStatus(data.message || "停止に失敗しました");
+        setStatus("再生状態をリセットしました");
+      } finally {
+        button.disabled = false;
+        spotifyPlaybackRequestInFlight = false;
       }
       return;
     }
 
     setStatus("再生中");
-    const response = await fetch(`${apiBase}/spotify/play`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ spotify_track_id: spotifyTrackId, device_id: deviceId }),
-    });
-    const data = await response.json().catch(() => ({}));
+    try {
+      const response = await fetch(`${apiBase}/spotify/play`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spotify_track_id: spotifyTrackId, device_id: deviceId }),
+      });
+      const data = await response.json().catch(() => ({}));
 
-    if (data.status === "success") {
+      if (data.status === "success") {
+        resetPlaybackButtons();
+        playingSpotifyTrackId = spotifyTrackId;
+        activePlaybackButton = button;
+        button.textContent = "■";
+        button.setAttribute("aria-label", "停止");
+        setStatus("再生中");
+      } else if (data.code === "SPOTIFY_PLAYER_TOKEN_REQUIRED") {
+        resetPlaybackButtons();
+        setStatus("SPOTIFY_REFRESH_TOKEN が必要です");
+      } else {
+        resetPlaybackButtons();
+        setStatus(data.message || "再生に失敗しました");
+      }
+    } catch {
       resetPlaybackButtons();
-      playingSpotifyTrackId = spotifyTrackId;
-      activePlaybackButton = button;
-      button.textContent = "■";
-      button.setAttribute("aria-label", "停止");
-      setStatus("再生中");
-    } else if (data.code === "SPOTIFY_PLAYER_TOKEN_REQUIRED") {
-      resetPlaybackButtons();
-      setStatus("SPOTIFY_REFRESH_TOKEN が必要です");
-    } else {
-      resetPlaybackButtons();
-      setStatus(data.message || "再生に失敗しました");
+      setStatus("再生に失敗しました");
+    } finally {
+      button.disabled = false;
+      spotifyPlaybackRequestInFlight = false;
     }
   }
 
@@ -617,6 +641,7 @@
     document.querySelectorAll("[data-spotify-track-id]").forEach((button) => {
       button.textContent = "▶";
       button.setAttribute("aria-label", "再生");
+      button.disabled = false;
     });
     playingSpotifyTrackId = null;
     activePlaybackButton = null;
@@ -652,7 +677,7 @@
   }
 
   function closePhotoModal() {
-    if (photoModal.open) photoModal.close();
+    if (photoModal?.open) photoModal.close();
   }
 
   function openCardModal() {
@@ -661,12 +686,20 @@
     queuePanel.classList.remove("is-open");
     closePhotoModal();
     closeUserMenu();
-    if (!cardPanel.open) cardPanel.showModal();
+    if (cardPanel.showModal) {
+      if (!cardPanel.open) cardPanel.showModal();
+    } else {
+      cardPanel.classList.add("is-open");
+    }
     document.getElementById("card-idm-input").focus();
   }
 
   function closeCardModal() {
-    if (cardPanel.open) cardPanel.close();
+    if (cardPanel.close && cardPanel.open) {
+      cardPanel.close();
+    } else {
+      cardPanel.classList.remove("is-open");
+    }
   }
 
   function closeUserMenu() {
@@ -734,6 +767,8 @@
   }
 
   async function renderPhotoGallery() {
+    if (!photoMessage || !photoGallery) return;
+
     photoMessage.textContent = "写真を読み込み中です。";
     const response = await fetch(`${apiBase}/photos`);
     const data = await response.json();
@@ -744,7 +779,7 @@
     }
 
     const photos = data.photos || [];
-    photoCount.textContent = `${data.count || photos.length}枚`;
+    if (photoCount) photoCount.textContent = `${data.count || photos.length}枚`;
     photoGallery.innerHTML = photos.map((photo) => `
       <figure>
         <img src="${escapeHtml(photo.image_data)}" alt="${escapeHtml(photo.filename)}">
