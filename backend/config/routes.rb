@@ -33,6 +33,8 @@ Rails.application.routes.draw do
       end
 
       namespace :alexa do
+        get "queue_state", to: "queues#show"
+        post "queue_state", to: "queues#update_state"
         post "play_queue", to: "queues#create"
       end
     end
