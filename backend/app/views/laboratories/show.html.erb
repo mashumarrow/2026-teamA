@@ -68,8 +68,6 @@
   .photo-gallery figcaption { padding: 8px; color: #94a3b8; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .photo-modal-box { position: relative; }
   .photo-modal-close { position: absolute; top: 8px; right: 8px; }
-  .card-modal-box { position: relative; }
-  .card-modal-close { position: absolute; top: 8px; right: 8px; }
   .portal-user-menu { z-index: 60; width: 13rem; margin-top: 8px; }
   @media (max-width: 720px) { .portal-topbar { flex-direction: column; } .music-panel, .stay-panel, .card-panel, .queue-panel { width: calc(100vw - 24px); padding: 22px; } .inline-form, .track-row, .stay-bar-row { grid-template-columns: 1fr; } .track-row img { display: none; } .portal-status { text-align: left; } .stay-calendar-scroll { overflow-x: auto; } .stay-calendar-grid { min-width: 784px; } }
 </style>
@@ -112,11 +110,9 @@
   </nav>
 
   <section class="music-panel" id="music-panel" aria-label="楽曲検索・登録">
-    <form method="dialog">
-      <button class="modal-close" type="button" data-close-music aria-label="閉じる">x</button>
-    </form>
     <div class="music-panel-header">
       <h2 class="portal-panel-title">楽曲検索・登録</h2>
+      <button class="btn btn-sm btn-outline" type="button" data-close-music>閉じる</button>
     </div>
     <div class="spotify-connect-row">
       <%= link_to "Spotifyを連携", spotify_authorize_path, class: "wide-button" %>
@@ -180,10 +176,10 @@
 
   <dialog id="card-panel" class="modal" aria-label="IDm再設定">
     <div class="modal-box card-modal-box bg-base-100 text-base-content">
-      <form method="dialog">
-        <button class="card-modal-close btn btn-sm btn-circle btn-ghost" type="submit" data-close-card aria-label="閉じる">x</button>
-      </form>
-      <h2 class="portal-panel-title mb-5">IDmの再設定</h2>
+      <div class="card-panel-header">
+        <h2 class="portal-panel-title">IDmの再設定</h2>
+        <button class="btn btn-sm btn-outline" type="button" data-close-card>閉じる</button>
+      </div>
       <div class="form-control w-full">
         <label class="label" for="card-idm-input">
           <span class="label-text">ICカードのIDm</span>
