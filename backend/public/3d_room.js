@@ -1,4 +1,4 @@
-// Three.js Scene Setup 
+// Three.js Scene Setup
 const scene = new THREE.Scene(); 
 scene.background = new THREE.Color(0x1a1a1a);
 
@@ -54,7 +54,7 @@ loader.load(
   },
   undefined,
   (error) => {
-    console.error("Error loading model:", error);
+    console.error("3Dモデルを読み込めませんでした:", error);
   },
 );
 
@@ -72,11 +72,208 @@ loader.load("/Screen.glb", (gltf) => {
 
 });
 
+// ルーレット表示
 let avatar = null;
 let avatarMixer = null; 
 let avatarActions = [];
 let currentAvatarAction = null;
 let avatarShadow = null;
+let roomRouletteMesh = null;
+let roomRouletteTexture = null;
+let roomRouletteCanvas = null;
+let roomRouletteContext = null;
+let roomRouletteState = {
+  phase: "idle",
+  message: "選曲ルーレット待機中",
+  selected_user: null,
+  selected_track: null,
+  roulette_candidates: []
+};
+let roomRouletteAngle = 0;
+let lastRoomRouletteRenderTime = 0;
+
+function createRoomRouletteBoard() {
+  roomRouletteCanvas = document.createElement("canvas");
+  roomRouletteCanvas.width = 1024;
+  roomRouletteCanvas.height = 768;
+  roomRouletteContext = roomRouletteCanvas.getContext("2d");
+  roomRouletteTexture = new THREE.CanvasTexture(roomRouletteCanvas);
+  roomRouletteTexture.encoding = THREE.sRGBEncoding;
+
+  const material = new THREE.MeshBasicMaterial({
+    map: roomRouletteTexture,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+  roomRouletteMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.42), material);
+  roomRouletteMesh.position.set(0.35, 1.90, 5.55);// ルーレットの位置
+  roomRouletteMesh.rotation.y = Math.PI;
+  scene.add(roomRouletteMesh);
+  drawRoomRoulette();
+}
+
+function drawRoomRoulette() {
+  if (!roomRouletteContext || !roomRouletteTexture) return;
+
+  const ctx = roomRouletteContext;
+  const width = roomRouletteCanvas.width;
+  const height = roomRouletteCanvas.height;
+  const candidates = Array.isArray(roomRouletteState.roulette_candidates)
+    ? roomRouletteState.roulette_candidates
+    : [];
+  const colors = ["#38bdf8", "#22c55e", "#facc15", "#f472b6", "#a78bfa", "#fb7185", "#2dd4bf", "#f97316"];
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+  roundRect(ctx, 0, 0, width, height, 28);
+  ctx.fill();
+
+  ctx.fillStyle = "#e0f2fe";
+  ctx.font = "700 55px sans-serif";
+  ctx.fillText("選曲ルーレット", 54, 72);
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "700 34px sans-serif";
+  ctx.fillText(roomRouletteState.selected_user || "待機中", 54, 128);
+
+  ctx.fillStyle = "#bae6fd";
+  ctx.font = "28px sans-serif";
+  wrapText(ctx, roomRouletteState.selected_track || roomRouletteState.message || "開始でルーレット開始", 54, 174, 420, 34);
+
+  const displayTrack = roomRouletteState.selected_track || roomRouletteState.track_name || roomRouletteState.track;
+  const displayUser = roomRouletteState.selected_user || roomRouletteState.user_name;
+  if (roomRouletteState.phase === "playing" && displayTrack) {
+    ctx.fillStyle = "rgba(34, 197, 94, 0.14)";
+    roundRect(ctx, 42, 236, 470, 116, 18);
+    ctx.fill();
+    ctx.fillStyle = "#86efac";
+    ctx.font = "700 24px sans-serif";
+    ctx.fillText("再生中", 62, 276);
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "700 28px sans-serif";
+    wrapText(ctx, displayTrack, 62, 314, 420, 32);
+    if (displayUser) {
+      ctx.fillStyle = "#bae6fd";
+      ctx.font = "22px sans-serif";
+      ctx.fillText(`当選者: ${displayUser}`, 62, 378);
+    }
+  }
+
+  const cx = 700;
+  const cy = 360;
+  const radius = 220;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(roomRouletteAngle);
+
+  if (candidates.length === 0) {
+    ctx.fillStyle = "#334155";
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    const total = candidates.reduce((sum, candidate) => sum + Number(candidate.week_minutes || 1), 0) || candidates.length;
+    let start = -Math.PI / 2;
+    candidates.forEach((candidate, index) => {
+      const weight = Number(candidate.week_minutes || 1);
+      const angle = (weight / total) * Math.PI * 2;
+      ctx.fillStyle = colors[index % colors.length];
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, start, start + angle);
+      ctx.closePath();
+      ctx.fill();
+      start += angle;
+    });
+  }
+
+  ctx.strokeStyle = "#f8fafc";
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.fillRect(-5, -radius + 22, 10, 92);
+
+  ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+  ctx.beginPath();
+  ctx.arc(0, 0, 78, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.5)";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - radius - 36);
+  ctx.lineTo(cx - 24, cy - radius + 18);
+  ctx.lineTo(cx + 24, cy - radius + 18);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.font = "24px sans-serif";
+  candidates.slice(0, 6).forEach((candidate, index) => {
+    const y = 520 + index * 34;
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.beginPath();
+    ctx.arc(66, y - 7, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = Number(candidate.user_id) === Number(roomRouletteState.selected_user_id) ? "#fef08a" : "#dbeafe";
+    ctx.fillText(`${candidate.name} ${Number(candidate.week_minutes || 0).toFixed(1)}分`, 90, y);
+  });
+
+  roomRouletteTexture.needsUpdate = true;
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = String(text || "").split("");
+  let line = "";
+  let currentY = y;
+  words.forEach((word) => {
+    const testLine = line + word;
+    if (ctx.measureText(testLine).width > maxWidth && line.length > 0) {
+      ctx.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+  ctx.fillText(line, x, currentY);
+}
+
+window.updateRoomRoulette = (state) => {
+  const incomingState = state || {};
+  const selectedTrack =
+    incomingState.selected_track ||
+    incomingState.track_name ||
+    incomingState.track ||
+    incomingState.song_name ||
+    null;
+
+  roomRouletteState = {
+    ...roomRouletteState,
+    ...incomingState,
+    selected_track: selectedTrack,
+  };
+  drawRoomRoulette();
+};
 
 // Load Avatar GLB Model 
 loader.load( 
@@ -111,6 +308,8 @@ loader.load(
     
   }
 );
+
+createRoomRouletteBoard();
 
 //Animateion function to play avatar animations by name
 function playAvatarAnimationByName(name) {
@@ -418,6 +617,18 @@ function animate() {
 
   if (avatarShadow) {
     avatarShadow.position.set(avatar.position.x, 0.05, avatar.position.z);
+  }
+
+  if (roomRouletteState.phase === "spinning") {
+    roomRouletteAngle += 0.12;
+    drawRoomRoulette();
+  } else if (roomRouletteState.phase === "playing") {
+    const now = performance.now();
+    if (now - lastRoomRouletteRenderTime > 500) {
+      lastRoomRouletteRenderTime = now;
+      if (roomRouletteMesh) roomRouletteMesh.visible = true;
+      drawRoomRoulette();
+    }
   }
 
   updateCameraLookAt();
