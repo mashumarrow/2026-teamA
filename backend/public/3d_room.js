@@ -19,6 +19,16 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true; 
 const clock = new THREE.Clock(); 
 
+const cameraHint = document.createElement("div");
+cameraHint.className = "camera-hint";
+cameraHint.textContent = "Esc で元のカメラに戻る";
+document.body.appendChild(cameraHint);
+
+const movementHint = document.createElement("div");
+movementHint.className = "camera-hint movement-hint";
+movementHint.textContent = "W/A/S/D で 前/左/後/右 へ移動";
+document.body.appendChild(movementHint);
+
 // Lighting 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); 
 directionalLight.position.set(5, 10, 5); 
@@ -168,6 +178,25 @@ let cameraLookAtTarget = defaultCameraTarget.clone();
 let autoMoveDirection = null;
 let autoMoveSteps = 0;
 let movementEnabled = true;
+let movementHintTimer = null;
+const movementHintDelay = 1000;
+
+function updateCameraHint() {
+  cameraHint.classList.toggle("is-visible", activeCameraMode === "screen");
+  movementHint.classList.toggle("is-visible", activeCameraMode !== "screen" && movementHintTimer !== null);
+}
+
+function resetMovementHintTimer() {
+  clearTimeout(movementHintTimer);
+  movementHint.classList.remove("is-visible");
+  movementHintTimer = window.setTimeout(() => {
+    if (activeCameraMode !== "screen") {
+      movementHint.classList.add("is-visible");
+    }
+  }, movementHintDelay);
+}
+
+resetMovementHintTimer();
 
 function resetCameraToDefault() {
   cameraFollowEnabled = true;
@@ -178,10 +207,14 @@ function resetCameraToDefault() {
   cameraStartLookAt.copy(cameraLookAtTarget);
   cameraEndPosition.copy(defaultCameraPosition);
   cameraEndLookAt.copy(defaultCameraTarget);
+  updateCameraHint();
 }
 
 function activateScreenCamera() {
   if (!avatar) {
+    return;
+  }
+  if (!movementEnabled) {
     return;
   }
 
@@ -200,6 +233,7 @@ function activateScreenCamera() {
   Object.keys(keys).forEach((key) => {
     keys[key] = false;
   });
+  updateCameraHint();
 }
 
 function updateCameraLookAt() {
@@ -303,10 +337,12 @@ window.addEventListener("keydown", (e) => {
   }
 
   keys[key] = true;
+  resetMovementHintTimer();
 });
 
 window.addEventListener("keyup", (e) => {
   keys[e.key.toLowerCase()] = false;
+  resetMovementHintTimer();
 });
 
 // Animation loop

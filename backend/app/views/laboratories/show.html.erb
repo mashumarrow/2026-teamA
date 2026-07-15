@@ -71,6 +71,14 @@
   .card-modal-box { position: relative; }
   .card-modal-close { position: absolute; top: 8px; right: 8px; }
   .portal-user-menu { z-index: 60; width: 13rem; margin-top: 8px; }
+  .camera-hint { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 30; padding: 10px 14px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(2,6,23,.74); color: #f8fafc; font-size: 13px; font-weight: 600; letter-spacing: .02em; backdrop-filter: blur(10px); pointer-events: none; opacity: 0; transition: opacity .2s ease; }
+  .camera-hint.is-visible { opacity: 1; }
+  .camera-hint.movement-hint {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+  }
   @media (max-width: 720px) { .portal-topbar { flex-direction: column; } .music-panel, .stay-panel, .card-panel, .queue-panel { width: calc(100vw - 24px); padding: 22px; } .inline-form, .track-row, .stay-bar-row { grid-template-columns: 1fr; } .track-row img { display: none; } .portal-status { text-align: left; } .stay-calendar-scroll { overflow-x: auto; } .stay-calendar-grid { min-width: 784px; } }
 </style>
 
