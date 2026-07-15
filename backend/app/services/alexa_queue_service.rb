@@ -1,21 +1,22 @@
 class AlexaQueueService
-  LOOKBACK = 1.week
-  RECENT_LIMIT = 3
-  DEFAULT_MIN_WEIGHT_SECONDS = 300
+  MIN_WEIGHT_MINUTES = 1.0
 
   def play_next_track(device_id: nil)
     candidates = candidate_users
-    return error("No users have registered tracks", "NO_TRACKS_AVAILABLE") if candidates.empty?
+    return error("No IC card registered users", "NO_CARD_REGISTERED_USERS") if candidates.empty?
 
-    excluded_user = consecutive_winner_to_skip
-    selectable_users = exclude_user(candidates, excluded_user)
-    weights = selection_weights(selectable_users)
-    selected_user = weighted_select(selectable_users, weights)
-    track = selected_user.spotify_account.spotify_tracks.sample
+    weights = selection_weights(candidates)
+    selected_user = weighted_select(candidates, weights)
+    track = selected_user.spotify_account&.spotify_tracks&.sample
+
+    if track.blank?
+      return no_track_result(selected_user, weights)
+    end
+
     track_uri = "spotify:track:#{track.spotify_track_id}"
 
     playback = SpotifyPlayerService.new.play_track!(track_uri, device_id: device_id)
-    return playback_error(playback, selected_user, track, track_uri, weights, excluded_user) unless playback[:status] == "success"
+    return playback_error(playback, selected_user, track, track_uri, weights) unless playback[:status] == "success"
 
     SpotifyPlayEvent.create!(user: selected_user, spotify_track: track, selected_at: Time.current)
 
@@ -25,10 +26,10 @@ class AlexaQueueService
       selected_user_id: selected_user.id,
       selected_track: "#{track.track_name} - #{track.artist_name}",
       spotify_track_id: track.spotify_track_id,
+      duration_ms: track.duration_ms,
       track_uri: track_uri,
       probability: probability_for(selected_user, weights),
-      excluded_user_id: excluded_user&.id,
-      excluded_user_name: excluded_user&.name,
+      roulette_candidates: roulette_candidates(candidates, weights),
       timestamp: Time.current.iso8601
     }
   end
@@ -36,44 +37,25 @@ class AlexaQueueService
   private
 
   def candidate_users
-    User.includes(:room_access_logs, spotify_account: :spotify_tracks)
-        .joins(spotify_account: :spotify_tracks)
+    User.includes(:room_access_logs, :felica_cards, spotify_account: :spotify_tracks)
+        .joins(:felica_cards)
         .distinct
         .to_a
   end
 
-  def exclude_user(users, excluded_user)
-    return users if excluded_user.blank? || users.size <= 1
-
-    users.reject { |user| user.id == excluded_user.id }
-  end
-
-  def consecutive_winner_to_skip
-    recent_events = SpotifyPlayEvent.order(selected_at: :desc).includes(:user).limit(RECENT_LIMIT).to_a
-    return if recent_events.size < RECENT_LIMIT
-
-    user_ids = recent_events.map(&:user_id)
-    return unless user_ids.uniq.one?
-
-    recent_events.first.user
-  end
-
   def selection_weights(users)
     users.each_with_object({}) do |user, result|
-      result[user.id] = weekly_stay_seconds(user) + minimum_weight_seconds
+      result[user.id] = weekly_stay_minutes(user)
     end
   end
 
-  def weekly_stay_seconds(user)
+  def weekly_stay_minutes(user)
     now = Time.current
-    start_time = now - LOOKBACK
+    start_time = now.beginning_of_week
     logs = user.room_access_logs.where("timestamp >= ?", start_time - RoomAccessSummary::MAX_OPEN_SESSION).to_a
+    minutes = RoomAccessSummary.new(logs, now).duration_between(start_time, now).to_f / 60.0
 
-    RoomAccessSummary.new(logs, now).duration_between(start_time, now).to_f
-  end
-
-  def minimum_weight_seconds
-    SpotifyEnv.fetch("SPOTIFY_MIN_SELECTION_WEIGHT_SECONDS").presence&.to_f || DEFAULT_MIN_WEIGHT_SECONDS
+    [minutes, MIN_WEIGHT_MINUTES].max
   end
 
   def weighted_select(users, weights)
@@ -96,16 +78,44 @@ class AlexaQueueService
     (weights[user.id].to_f / total).round(4)
   end
 
-  def playback_error(playback, selected_user, track, track_uri, weights, excluded_user)
+  def roulette_candidates(users, weights)
+    users.map do |user|
+      {
+        user_id: user.id,
+        name: user.name,
+        week_minutes: weights[user.id].to_f.round(1),
+        probability: probability_for(user, weights)
+      }
+    end
+  end
+
+  def no_track_result(selected_user, weights)
+    users = candidate_users
+    {
+      status: "no_track",
+      message: "お気に入りされている登録がありません。楽曲のお気に入り登録お願いします。",
+      selected_user: selected_user.name,
+      selected_user_id: selected_user.id,
+      selected_track: nil,
+      spotify_track_id: nil,
+      duration_ms: nil,
+      track_uri: nil,
+      probability: probability_for(selected_user, weights),
+      roulette_candidates: roulette_candidates(users, weights),
+      timestamp: Time.current.iso8601
+    }
+  end
+
+  def playback_error(playback, selected_user, track, track_uri, weights)
     playback.merge(
       selected_user: selected_user.name,
       selected_user_id: selected_user.id,
       selected_track: "#{track.track_name} - #{track.artist_name}",
       spotify_track_id: track.spotify_track_id,
+      duration_ms: track.duration_ms,
       track_uri: track_uri,
       probability: probability_for(selected_user, weights),
-      excluded_user_id: excluded_user&.id,
-      excluded_user_name: excluded_user&.name,
+      roulette_candidates: roulette_candidates(candidate_users, weights),
       timestamp: Time.current.iso8601
     )
   end
