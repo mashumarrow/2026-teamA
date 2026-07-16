@@ -1,0 +1,47 @@
+PaSoRi RC-S300 Raspberry Pi setup
+=================================
+
+Goal
+----
+Raspberry Pi boots, starts the PaSoRi reader automatically, and posts card scans to the deployed Rails API.
+
+1. Clone this repository on Raspberry Pi
+---------------------------------------
+git clone <repository-url>
+cd 2026-teamA
+
+2. Create the PaSoRi environment file
+-------------------------------------
+cp scripts/pasori-reader.env.example scripts/pasori-reader.env
+nano scripts/pasori-reader.env
+
+Set these values:
+
+ROOM_PORTAL_SCAN_URL=https://p01--isdl--9ww4ft9snnpn.code.run/api/v1/scan
+API_KEY=<same API_KEY as Rails production>
+
+3. Install dependencies and systemd service
+-------------------------------------------
+bash scripts/setup_pasori_systemd.sh
+
+If API_KEY is still the placeholder, the script installs the service but does not start it.
+After editing scripts/pasori-reader.env, start it with:
+
+sudo systemctl enable --now room-portal-pasori.service
+
+4. Check status and logs
+------------------------
+systemctl status room-portal-pasori.service
+journalctl -u room-portal-pasori.service -f
+
+5. Check PaSoRi recognition manually
+------------------------------------
+pcsc_scan
+
+Operational flow
+----------------
+Raspberry Pi power on
+-> systemd starts room-portal-pasori.service
+-> scripts/pasori_rcs300_reader.py waits for cards
+-> card scan posts IDm to Rails /api/v1/scan
+-> Rails saves the in/out room access log to the production DB
