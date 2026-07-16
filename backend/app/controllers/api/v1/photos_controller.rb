@@ -20,6 +20,15 @@ module Api
         render_error(e.record.errors.full_messages.to_sentence, "PHOTO_INVALID", :unprocessable_entity)
       end
 
+      def destroy
+        # Photos are shared for viewing, but only their uploader may delete them.
+        photo = current_user.portal_photos.find(params[:id])
+        photo.destroy!
+        render json: { status: "success" }
+      rescue ActiveRecord::RecordNotFound
+        render_error("写真が見つからないか、削除する権限がありません。", "PHOTO_NOT_FOUND", :not_found)
+      end
+
       private
 
       def photo_params
