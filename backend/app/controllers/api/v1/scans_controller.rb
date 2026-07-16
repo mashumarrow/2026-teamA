@@ -12,6 +12,7 @@ module Api
 
         log = RoomAccessService.new(card.user).record!
         playback_result = log.in? ? AlexaQueueService.new.play_next_track : nil
+        update_roulette_state!(playback_result, card.user) if playback_result.present?
 
         render json: {
           status: "success",
@@ -23,6 +24,17 @@ module Api
       rescue StandardError => e
         Rails.logger.error("[scan] #{e.class}: #{e.message}")
         render_error("Failed to process scan", "SCAN_FAILED", :internal_server_error)
+      end
+
+      private
+
+      def update_roulette_state!(playback_result, user)
+        RouletteState.update!(
+          playback_result.merge(
+            phase: playback_result[:status] == "success" ? "playing" : "result",
+            updated_by: user.name
+          )
+        )
       end
     end
   end
