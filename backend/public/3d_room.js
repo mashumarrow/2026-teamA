@@ -95,11 +95,13 @@ let roomRouletteContext = null;
 let roomRouletteState = {
   phase: "idle",
   message: "選曲ルーレット待機中",
+  selected_user_id: null,
   selected_user: null,
   selected_track: null,
   roulette_candidates: []
 };
 let roomRouletteAngle = 0;
+let roomRouletteTargetAngle = null;
 let lastRoomRouletteRenderTime = 0;
 
 function createRoomRouletteBoard() {
@@ -268,6 +270,38 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line, x, currentY);
 }
 
+function roomRouletteRanges(candidates) {
+  const total = candidates.reduce((sum, candidate) => sum + (Number(candidate.week_minutes) || 1), 0) || candidates.length;
+  let cursor = 0;
+  return candidates.map((candidate, index) => {
+    const weight = Number(candidate.week_minutes) || 1;
+    const end = index === candidates.length - 1 ? Math.PI * 2 : cursor + (weight / total) * Math.PI * 2;
+    const range = { start: cursor, end };
+    cursor = end;
+    return range;
+  });
+}
+
+function roomRouletteStopAngle(state) {
+  const candidates = Array.isArray(state.roulette_candidates) ? state.roulette_candidates : [];
+  if (candidates.length === 0 || !state.selected_user_id) return null;
+
+  const winnerIndex = candidates.findIndex((candidate) => Number(candidate.user_id) === Number(state.selected_user_id));
+  if (winnerIndex < 0) return null;
+
+  const ranges = roomRouletteRanges(candidates);
+  const targetRange = ranges[winnerIndex];
+  const padding = Math.min(0.12, Math.max(0.02, (targetRange.end - targetRange.start) * 0.18));
+  const targetStart = targetRange.start + padding;
+  const targetEnd = targetRange.end - padding;
+  const targetAngle = targetStart < targetEnd
+    ? targetStart + Math.random() * (targetEnd - targetStart)
+    : (targetRange.start + targetRange.end) / 2;
+  const currentBase = roomRouletteAngle % (Math.PI * 2);
+
+  return roomRouletteAngle - targetAngle - currentBase;
+}
+
 window.updateRoomRoulette = (state) => {
   const incomingState = state || {};
   const selectedTrack =
@@ -282,6 +316,15 @@ window.updateRoomRoulette = (state) => {
     ...incomingState,
     selected_track: selectedTrack,
   };
+  if (roomRouletteState.phase === "playing" || roomRouletteState.phase === "result") {
+    const stopAngle = roomRouletteStopAngle(roomRouletteState);
+    if (stopAngle !== null) {
+      roomRouletteAngle = stopAngle;
+      roomRouletteTargetAngle = null;
+    }
+  } else if (roomRouletteState.phase === "spinning") {
+    roomRouletteTargetAngle = null;
+  }
   drawRoomRoulette();
 };
 
@@ -696,6 +739,13 @@ function animate() {
 
   if (roomRouletteState.phase === "spinning") {
     roomRouletteAngle += 0.12;
+    drawRoomRoulette();
+  } else if (roomRouletteTargetAngle !== null) {
+    roomRouletteAngle += (roomRouletteTargetAngle - roomRouletteAngle) * 0.08;
+    if (Math.abs(roomRouletteTargetAngle - roomRouletteAngle) < 0.002) {
+      roomRouletteAngle = roomRouletteTargetAngle;
+      roomRouletteTargetAngle = null;
+    }
     drawRoomRoulette();
   } else if (roomRouletteState.phase === "playing") {
     const now = performance.now();
