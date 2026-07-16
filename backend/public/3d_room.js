@@ -117,6 +117,54 @@ loader.load("/Screen.glb", (gltf) => {
 
 });
 
+function createTitleMaterial(text) {
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 128;
+
+  const ctx = canvas.getContext("2d");
+
+  // 半透明の黒背景
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  const paddingX = 20;
+const paddingY = 10;
+
+ctx.font = "bold 42px sans-serif";
+
+// 文字の幅を取得
+const textWidth = ctx.measureText(text).width;
+
+// 黒背景
+ctx.fillStyle = "rgba(0,0,0,0.6)";
+ctx.fillRect(
+    0,
+    0,
+    textWidth + paddingX * 2,
+    42 + paddingY * 2
+);
+
+// 文字
+ctx.fillStyle = "white";
+ctx.textBaseline = "top";
+ctx.fillText(text, paddingX, paddingY);
+
+  const texture = new THREE.CanvasTexture(canvas);
+
+  return new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true
+  });
+}
+
+const categoryNames = {
+  lab_trip: "旅行",
+  conference: "学会",
+  event: "イベント",
+  other: "その他",
+};
+
+
 // Uploaded photos are stored as data URLs in PortalPhoto and exposed by
 // GET /api/v1/photos. Each screen displays only its assigned category.
 const emptyPhotoTexture = new THREE.DataTexture(new Uint8Array([17, 17, 17, 255]), 1, 1);
@@ -202,6 +250,38 @@ const photoScreenPanels = [
     requestId: 0,
     transition: null,
   };
+  const title = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.7, 0.18),
+  createTitleMaterial(categoryNames[category])
+);
+
+// 写真Planeと同じ位置
+title.position.copy(panel.position);
+
+// パネルの向きを取得
+const normal = new THREE.Vector3(0, 0, 1);
+normal.applyAxisAngle(
+  new THREE.Vector3(0, 1, 0),
+  THREE.MathUtils.degToRad(rotationY)
+);
+
+// 写真よりほんの少し前へ（Z-fighting防止）
+title.position.add(normal.multiplyScalar(0.005));
+
+// 左上へ移動
+const right = new THREE.Vector3(1, 0, 0);
+right.applyAxisAngle(
+  new THREE.Vector3(0, 1, 0),
+  THREE.MathUtils.degToRad(rotationY)
+);
+
+title.position.add(right.multiplyScalar(-0.6)); // 左
+title.position.y += 0.55;                       // 上
+
+// 向きは写真と同じ
+title.rotation.copy(panel.rotation);
+
+scene.add(title);
   scene.add(panel);
   return panel;
 });
