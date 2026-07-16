@@ -1,0 +1,16 @@
+[Unit]
+Description=Room Portal PaSoRi RC-S300 reader
+After=network-online.target pcscd.service
+Wants=network-online.target pcscd.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/2026-teamA
+EnvironmentFile=/home/pi/2026-teamA/scripts/pasori-reader.env
+ExecStart=/usr/bin/python3 /home/pi/2026-teamA/scripts/pasori_rcs300_reader.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
