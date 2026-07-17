@@ -296,6 +296,7 @@
             data-month-label="<%= format_stay_duration(row[:month_seconds]) %>"
             data-current-label="<%= format_stay_duration(row[:current_duration_seconds]) %>"
             data-current-since="<%= row[:current_since] ? row[:current_since].strftime('%m/%d %H:%M') : '-' %>"
+            data-user-id="<%= row[:user].id %>"
             data-user-name="<%= row[:user].name %>"
           >
             <div class="stay-bar-row">
@@ -310,9 +311,7 @@
               </div>
               <div class="flex min-w-28 items-center justify-end gap-2">
                 <span class="badge badge-info badge-sm font-semibold text-info-content" data-stay-value><%= format_stay_duration(row[:week_seconds]) %></span>
-                <% if row[:in_room] %>
-                  <span class="badge badge-success badge-sm">入室中</span>
-                <% end %>
+                <span class="badge badge-success badge-sm <%= 'hidden' unless row[:in_room] %>" data-in-room-badge>入室中</span>
               </div>
             </div>
           </div>
@@ -482,6 +481,7 @@
   let rouletteRotation = 0;
   let rouletteSpinFrame = null;
   let rouletteSpinLastTime = null;
+  let currentStaySort = "week";
   let queueRouletteRequestInFlight = false;
   let queueRouletteActive = false;
   let queueRouletteTimer = null;
@@ -565,6 +565,8 @@
   sortStayRows("week");
   switchStayView("chart");
   renderCalendarMonth();
+  loadAccessLogs();
+  setInterval(loadAccessLogs, 5000);
   spotifyDeviceRefreshButton?.addEventListener("click", loadSpotifyDevices);
   if (spotifyConnected) loadSpotifyDevices();
   document.getElementById("music-search-button").addEventListener("click", searchTracks);
@@ -614,7 +616,8 @@
       const data = await response.json();
       if (data.status === "success") {
         const registeredIdm = data.card?.idm || idm;
-        setStatus("IDmをログイン中のユーザーに再設定しました");
+        const registeredUser = data.user?.name || data.user?.email || "ログイン中のユーザー";
+        setStatus(`${registeredUser} に ${registeredIdm} を登録しました`);
         closeCardModal();
         input.value = registeredIdm;
         input.dataset.currentIdm = registeredIdm;
@@ -1312,6 +1315,10 @@
   async function loadAccessLogs() {
     const response = await fetch(`${apiBase}/access_logs`);
     const data = await response.json();
+    if (data.status !== "success") return;
+
+    updateStayRows(data.room_access_rows || []);
+
     const container = document.getElementById("access-log-list");
     container.innerHTML = data.logs.map((log) => `
       <article class="track-row">
@@ -1321,6 +1328,31 @@
         </div>
       </article>
     `).join("") || `<p class="muted">滞在ログはまだありません。</p>`;
+  }
+
+  function updateStayRows(rows) {
+    const rowsByUserId = new Map(rows.map((row) => [String(row.user_id), row]));
+
+    stayRows.forEach((element) => {
+      const row = rowsByUserId.get(element.dataset.userId);
+      if (!row) return;
+
+      const inRoom = Boolean(row.in_room);
+      element.dataset.inRoom = inRoom ? "true" : "false";
+      element.dataset.currentSeconds = String(row.current_seconds || 0);
+      element.dataset.todaySeconds = String(row.today_seconds || 0);
+      element.dataset.weekSeconds = String(row.week_seconds || 0);
+      element.dataset.monthSeconds = String(row.month_seconds || 0);
+      element.dataset.currentLabel = formatDuration(row.current_seconds || 0);
+      element.dataset.todayLabel = formatDuration(row.today_seconds || 0);
+      element.dataset.weekLabel = formatDuration(row.week_seconds || 0);
+      element.dataset.monthLabel = formatDuration(row.month_seconds || 0);
+      element.dataset.currentSince = row.current_since || "-";
+
+      element.querySelector("[data-in-room-badge]")?.classList.toggle("hidden", !inRoom);
+    });
+
+    sortStayRows(currentStaySort);
   }
 
   function setStatus(message) {
@@ -1587,6 +1619,7 @@
   function sortStayRows(mode) {
     const chart = document.querySelector("[data-stay-chart]");
     if (!chart) return;
+    currentStaySort = mode;
 
     staySortButtons.forEach((button) => {
       const isActive = button.dataset.staySort === mode;
