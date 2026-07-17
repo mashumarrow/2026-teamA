@@ -761,6 +761,11 @@ const screenCameraViews = {
     target: new THREE.Vector3(0, 0.8, 5.9),
   },
 };
+
+function isUiOpen() {
+  return document.querySelector(".is-open") !== null;
+}
+
 const rouletteCameraPosition = new THREE.Vector3(1.8, 1.3, -6);
 const rouletteCameraTarget = new THREE.Vector3(2.3, 1.4, -7.2);
 
@@ -844,6 +849,7 @@ function activateScreen1Camera() {
   if (activeCameraMode === "screen1") {
     return;
   }
+  if (isUiOpen()) return;
 
   activateCameraToTarget(screenCameraViews.screen1.position, screenCameraViews.screen1.target, "screen1");
   avatar.position.set(-1.5, 0, 1);
@@ -855,6 +861,7 @@ function activateScreen2Camera() {
   if (activeCameraMode === "screen2") {
     return;
   }
+  if (isUiOpen()) return;
 
   activateCameraToTarget(screenCameraViews.screen2.position, screenCameraViews.screen2.target, "screen2");
   avatar.position.set(-1, 0, -6);
@@ -866,6 +873,7 @@ function activateScreen3Camera() {
   if (activeCameraMode === "screen3") {
     return;
   }
+  if (isUiOpen()) return;
 
   activateCameraToTarget(screenCameraViews.screen3.position, screenCameraViews.screen3.target, "screen3");
   avatar.position.set(3, 0, -4.6);
@@ -877,6 +885,7 @@ function activateScreen4Camera() {
   if (activeCameraMode === "screen4") {
     return;
   }
+  if (isUiOpen()) return;
 
   activateCameraToTarget(screenCameraViews.screen4.position, screenCameraViews.screen4.target, "screen4");
   avatar.position.set(0, 0, 2.8);
@@ -888,6 +897,7 @@ function activateRouletteCamera() {
   if (activeCameraMode === "roulette") {
     return;
   }
+  if (isUiOpen()) return;
 
   activateCameraToTarget(rouletteCameraPosition, rouletteCameraTarget, "roulette");
   avatar.position.set(0, 0, -7.2);
@@ -1114,7 +1124,7 @@ function animate() {
 
   const moveDirection = new THREE.Vector3();
 
-  if (movementEnabled) {
+  if (movementEnabled && !isUiOpen()) {
     if (keys["w"]) {
       moveDirection.add(cameraToAvatar);
     }
