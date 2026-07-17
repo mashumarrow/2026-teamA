@@ -459,7 +459,21 @@ function drawRoomRoulette() {
   const candidates = Array.isArray(roomRouletteState.roulette_candidates)
     ? roomRouletteState.roulette_candidates
     : [];
-  const colors = ["#38bdf8", "#22c55e", "#facc15", "#f472b6", "#a78bfa", "#fb7185", "#2dd4bf", "#f97316"];
+  const colors = [
+    "#38bdf8", "#22c55e", "#facc15", "#f472b6",
+    "#a78bfa", "#fb7185", "#2dd4bf", "#f97316",
+    "#60a5fa", "#84cc16", "#f59e0b", "#ec4899",
+    "#818cf8", "#ef4444", "#14b8a6", "#fb923c",
+    "#06b6d4", "#a3e635", "#fde047", "#c084fc",
+    "#f43f5e", "#10b981", "#eab308", "#d946ef",
+    "#0ea5e9", "#4ade80", "#fbbf24", "#e879f9",
+    "#6366f1", "#f87171", "#5eead4", "#fdba74",
+    "#0284c7", "#65a30d", "#ca8a04", "#db2777",
+    "#7c3aed", "#dc2626", "#0f766e", "#ea580c",
+    "#67e8f9", "#bef264", "#fef08a", "#f0abfc",
+    "#93c5fd", "#86efac", "#fed7aa", "#fda4af",
+    "#99f6e4", "#c4b5fd"
+  ];
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
